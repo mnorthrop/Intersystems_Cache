@@ -1,4 +1,4 @@
-%SecurityCopy	;This routine is installed into each instance and uses Export/Import to have the same list of users in each instance.
+%GlobalCopy	;This routine is installed into each instance and uses Export/Import to move a specific set of globals.
  WRITE "Use one of the following entry points:"
  WRITE !,"Export"
  WRITE !,"Import"
@@ -9,9 +9,9 @@ Export()
 	// Set variables
 	SET inst=$PIECE($SYSTEM,":",2)
 	SET yyyymmdd=$ZDATETIME($PIECE($HOROLOG,",",1),8)
-	SET exportFile="/tmp/"_yyyymmdd_"_sec_export.xml"
-	SET secGlobals=^ConfigGlobal("SecurityCopy", "EXPORT")
-	SET newNSP=^ConfigGlobal("SecurityCopy","EXPORT_LOC",inst)
+	SET exportFile="/tmp/"_yyyymmdd_"_gbl_export.xml"
+	SET secGlobals=^ConfigGlobal("GlobalCopy", "EXPORT")
+	SET newNSP=^ConfigGlobal("GlobalCopy","EXPORT_LOC",inst)
 	SET newNSPcmd="^^"_newNSP
 
 	// Change to correct environment
@@ -23,7 +23,6 @@ Export()
 
 	// Export
 	DO $SYSTEM.OBJ.Export(globals,exportFile)
-
 	QUIT
 
  // This procedure imports globals from the /tmp/yyyymmdd_sec_export.xml file
@@ -31,21 +30,21 @@ Import()
 	// Set variables
 	SET inst = $PIECE($SYSTEM,":",2)
 	SET yyyymmdd = $ZDATETIME($PIECE($HOROLOG,",",1),8)
-	SET importFile = "/tmp/"_yyyymmdd_"_sec_export.xml"
-	SET secGlobals =^ConfigGlobal("SecurityCopy", "EXPORT")
+	SET importFile = "/tmp/"_yyyymmdd_"_gbl_export.xml"
+	SET secGlobals =^ConfigGlobal("GlobalCopy", "EXPORT")
 
 	// Clear previous data
-	FOR i=1:1:$LENGTH(secGlobals,"|") {
-		SET piece = $PIECE(secGlobals,"|",i)
+	FOR i=1:1:$LENGTH(theGlobals,"|") {
+		SET piece = $PIECE(theGlobals,"|",i)
 		SET killCmd = "^"_piece
 		KILL killCmd
 	}
 
 	// Set index
-	SET key = $OPEN(^ConfigGlobal("SecurityCopy","IMPORT_LOC",inst,""))
+	SET key = $OPEN(^ConfigGlobal("GlobalCopy","IMPORT_LOC",inst,""))
 	WHILE (key '= "") {
 		// For each namespace do import
-		SET newNSP = ^ConfigGlobal("SecurityCopy","IMPORT_LOC",inst,key)
+		SET newNSP = ^ConfigGlobal("GlobalCopy","IMPORT_LOC",inst,key)
 		SET newNSPcmd="^^"_newNSP
 		ZNSPACE newNSPcmd
 		WRITE !,"***** Importing into instance "_inst_" namespace "_key
@@ -53,6 +52,6 @@ Import()
 
 		// Set iteration for next key
 		ZNSPACE "%SYS"
-		SET key = $o(^ConfigGlobal("SecurityCopy","IMPORT_LOC",inst,key))
+		SET key = $o(^ConfigGlobal("GlobalCopy","IMPORT_LOC",inst,key))
 	}
 	QUIT
